@@ -1,0 +1,87 @@
+Splunk SH: https://34.29.43.154:8000
+admin|12345678
+index=test_   sourcetype=access_combined 
+
+
+Homework---------------
+Q: Find the Difference:
+No-enforcement License ------- 
+Enforcement License ------
+
+Q. How to use search command as a case sensitive
+
+| makeresults 
+| fields - _time 
+| eval aa="this is AYAN and he lives in kolkata and his age is 29,this is ayan and he lives in kolkata and his age is 24,this is aYan and he lives in vizak and his age is 35" , aa=split(aa,",") 
+| mvexpand aa 
+| eval age=mvindex(split(aa," "),-1) , name=mvindex(split(aa," "),2) 
+
+Q 2: I want to see the name only AYAN ( age will be 29 for this result)
+---------------------
+
+| makeresults 
+| fields - _time 
+| eval aa="this is ayan01 and he lives in kolkata and his age is 29,this is subham88 and he lives in kolkata and his age is 24,this is abrar78 and he lives in vizak and his age is 35" , aa=split(aa,",") 
+| mvexpand aa 
+| eval age=mvindex(split(aa," "),-1) , name=mvindex(split(aa," "),2) 
+
+Q 1: find the persons whose age are more than 20 but less than 30
+ans: | makeresults 
+| fields - _time 
+| eval aa="this is ayan01 and he lives in kolkata and his age is 29,this is subham88 and he lives in kolkata and his age is 24,this is abrar78 and he lives in vizak and his age is 35" , aa=split(aa,",") 
+| mvexpand aa 
+| eval age=mvindex(split(aa," "),-1) , name=mvindex(split(aa," "),2) 
+| table age 
+| search age>20 AND age<30
+
+Solution:
+1. 
+| makeresults 
+| fields - _time 
+| eval aa="this is ayan01 and he lives in kolkata and his age is 29,this is subham88 and he lives in kolkata and his age is 24,this is abrar78 and he lives in vizak and his age is 35" 
+| eval aa=split(aa,",") 
+| mvexpand aa 
+| eval age=tonumber(mvindex(split(aa," "),-1)), name=mvindex(split(aa," "),2) 
+| where name="ayan01" 
+| table name, age
+
+2.
+| makeresults 
+| fields - _time 
+| eval aa="this is ayan01 and he lives in kolkata and his age is 29,this is subham88 and he lives in kolkata and his age is 24,this is abrar78 and he lives in vizak and his age is 35" , aa=split(aa,",") 
+| mvexpand aa 
+| eval age=mvindex(split(aa," "),-1) , name=mvindex(split(aa," "),2) 
+| table age 
+| search age>20 AND age<30
+
+3.
+# To remove the numeric part from the extracted name (e.g., convert "ayan01" to "ayan"), you can use rex or replace. Here's a clean version using replace to strip digits from the name field:
+# Explanation:
+raw_name holds values like ayan01.
+replace(raw_name, "[0-9]+", "") removes all numeric characters, giving you just ayan.
+where name="ayan" filters only that record.
+
+| makeresults 
+| fields - _time 
+| eval aa="this is ayan01 and he lives in kolkata and his age is 29,this is subham88 and he lives in kolkata and his age is 24,this is abrar78 and he lives in vizak and his age is 35" 
+| eval aa=split(aa,",") 
+| mvexpand aa 
+| eval age=tonumber(mvindex(split(aa," "),-1)), raw_name=mvindex(split(aa," "),2) 
+| eval name=replace(raw_name, "[0-9]+", "") 
+| where name="ayan" 
+| table name, age
+
+4.
+# display the name as Uppercase
+# To display the name in uppercase, you can use the upper() function in SPL.
+
+| makeresults 
+| fields - _time 
+| eval aa="this is ayan01 and he lives in kolkata and his age is 29,this is subham88 and he lives in kolkata and his age is 24,this is abrar78 and he lives in vizak and his age is 35" 
+| eval aa=split(aa,",") 
+| mvexpand aa 
+| eval age=tonumber(mvindex(split(aa," "),-1)), raw_name=mvindex(split(aa," "),2) 
+| eval name=replace(raw_name, "[0-9]+", "") 
+| eval name=upper(name) 
+| where name="AYAN" 
+| table name
