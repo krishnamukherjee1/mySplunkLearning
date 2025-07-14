@@ -1,0 +1,104 @@
+Q1: Difference among "Fast Mode", "Smart Mode", and "Verbose Mode"
+Splunk offers three search modes that balance performance and data richness:
+
+Mode	Purpose	Field Discovery	Performance	Use Case
+Fast Mode	Prioritize speed	❌ Off	⚡ Fast	Quick searches, dashboards, transforming commands
+Smart Mode	Balance speed & completeness	✅ Adaptive	⚖️ Balanced	Default mode; adjusts based on search type
+Verbose Mode	Maximize data visibility	✅ On	🐢 Slow	Deep analysis, troubleshooting, exploring unknown fields
+Fast Mode: Only returns default/indexed fields and explicitly mentioned fields. No automatic field extraction.
+
+Smart Mode: Behaves like Fast Mode for transforming searches (e.g., stats, chart) and like Verbose Mode for event searches.
+
+Verbose Mode: Extracts all possible fields, including calculated and search-time fields. Useful for exploring unfamiliar data but slower2.
+
+📊 Q2: Difference between | table and | fields
+Both commands help control which fields appear in your results, but they serve different purposes:
+
+Command	Functionality	Output Format	Performance	Use Case
+`	fields`	Filters fields from events	Raw events	✅ Faster	Early field filtering, performance optimization
+`	table`	Displays selected fields in tabular form	Tabular view	❌ Slower	Final presentation, dashboards, visual inspection
+| fields removes unwanted fields early in the pipeline, reducing memory and bandwidth usage.
+
+| table formats results into a table but is a transforming command, which can slow down searches if used mid-pipeline5.
+
+⚡ Q3: Why | fields is faster than | table
+| fields is a streaming command, meaning it processes each event as it comes and doesn't require all data to be collected first.
+
+| table is a non-streaming transforming command, which means it waits for all events before formatting them, increasing load on the search head.
+
+Using | fields early helps reduce data transfer from indexers to the search head, especially in clustered environments7.
+
+If you're building dashboards or optimizing searches, knowing when to use each mode and command can make a huge difference in performance and clarity. Want to try a few SPL examples together?
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+🚀 Q1. Fast, Smart, and Verbose Modes in Splunk
+Think of it like choosing how much detail you want when searching:
+Fast Mode → “Just give me what I asked for — quickly.”
+Smart Mode → “Give me extra details only if they help.”
+Verbose Mode → “Give me everything, even the stuff I didn’t ask for.”
+Fast is fastest, Smart is balanced, Verbose is most detailed but slowest.
+
+📋 Q2. What's the difference between | fields and | table?
+Imagine you're looking at a big form full of info, and you only want to see certain parts:
+| fields → “Hide everything except what I need.”
+| table → “Show me my selected info in a clean table.”
+💡 fields keeps the raw format but just removes unwanted stuff. 💡 table makes it look pretty but takes longer.
+
+⚡ Q3. Why is | fields faster than | table?
+Because:
+fields just filters info — it’s like saying “only bring me the essentials.”
+table waits, organizes, and displays — like “let’s clean up and make it look nice.”
+And honestly, cleaning up takes time, even for Splunk 😄
+If you want, I can show you examples using SPL so you can see the difference in action. Just say the word!
+Now give me examples
+Of course, Krishna! Let’s walk through some real SPL examples so you can see how each concept works in action:
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+🔍 Q1. Examples of Fast, Smart, and Verbose Modes
+Let’s say you’re searching for login failures:
+
+spl
+index=security sourcetype=access_combined status=401
+Now try running this in each mode:
+
+Fast Mode: Only shows basic fields like _time, host, source, sourcetype. You won’t see extra fields like user_agent or clientip unless you explicitly ask for them.
+
+Smart Mode: If you add a transforming command like stats, it behaves like Fast Mode:
+
+spl
+index=security sourcetype=access_combined status=401 | stats count by clientip
+If you remove stats, it behaves like Verbose Mode and shows all extracted fields.
+
+Verbose Mode: Shows everything — even fields you didn’t ask for. Great for exploring unknown data, but slower.
+
+📋 Q2. Examples of | fields vs | table
+Let’s say you want to focus on login attempts:
+
+spl
+index=security sourcetype=access_combined status=401
+Using | fields:
+
+spl
+... | fields clientip, user_agent
+This keeps only clientip and user_agent in raw event view. No formatting.
+
+Using | table:
+
+spl
+... | table clientip, user_agent
+This shows results in a clean table — great for dashboards or reports.
+
+⚡ Q3. Why | fields is faster than | table
+Let’s compare two searches:
+
+Using fields early:
+
+spl
+index=security sourcetype=access_combined status=401 | fields clientip, user_agent | stats count by clientip
+✅ Fast: Filters fields early, reduces data sent to search head.
+
+Using table mid-search:
+
+spl
+index=security sourcetype=access_combined status=401 | table clientip, user_agent | stats count by clientip
+❌ Slower: table is a transforming command, so it waits for all events before formatting.
